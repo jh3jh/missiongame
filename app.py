@@ -6,21 +6,24 @@ import time
 # 1. 페이지 기본 설정 (귀여운 아이콘과 제목)
 st.set_page_config(page_title="미션 보물 찾기", layout="centered", page_icon="🧸")
 
-# 2. 아기자기한 디자인을 위한 커스텀 CSS (주아체 폰트, 색상, 애니메이션)
+# 2. 아기자기한 디자인을 위한 커스텀 CSS (초록/핑크 버튼 및 완벽한 글꼴 적용)
 st.markdown("""
     <style>
-    /* 귀여운 폰트(배달의민족 주아체) 적용 */
+    /* 귀엽고 가독성 최강인 폰트(배달의민족 주아체) 불러오기 */
     @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
     
-    html, body, [class*="css"]  {
+    /* 스트림릿의 모든 요소에 주아체 강제 적용 (!important) */
+    * {
         font-family: 'Jua', sans-serif !important;
     }
     
-    /* 배경은 솜사탕 같은 연한 파스텔 핑크, 글자는 부드러운 차콜색 */
+    /* 전체 배경은 솜사탕 같은 연한 파스텔 핑크 */
     .stApp {
         background-color: #fff0f5; 
     }
-    h1, h2, h3, p, div {
+    
+    /* 기본 텍스트는 부드러운 차콜색으로 가독성 확보 */
+    h1, h2, h3, p, div, span, label {
         color: #334155 !important;
     }
 
@@ -32,56 +35,64 @@ st.markdown("""
         75% { transform: translateY(-15px) rotate(-5deg); }
     }
     .shake-box {
-        font-size: 110px;
+        font-size: 120px;
         text-align: center;
         animation: bounce-shake 0.4s infinite;
         margin: 30px 0;
         text-shadow: 3px 3px 10px rgba(0,0,0,0.1);
     }
 
-    /* 미션 텍스트 강조 (알록달록 점선 테두리와 둥근 모서리) */
+    /* ⭐ 미션 텍스트 카드 강조 (귀여움 + 가독성 극대화) */
     .mission-text {
-        font-size: 45px;
+        font-size: 55px !important; /* 글씨를 아주 큼직하게 */
         text-align: center;
         background-color: #ffffff;
         padding: 40px;
         border-radius: 30px;
-        border: 5px dashed #a78bfa; /* 파스텔 보라색 점선 */
+        border: 6px dashed #a78bfa; /* 파스텔 보라색 굵은 점선 */
         margin: 20px 0;
-        color: #1e3a8a !important; /* 미션 글씨는 돋보이는 네이비 */
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        line-height: 1.4;
+        color: #1e3a8a !important; /* 미션 글씨는 눈에 확 띄는 네이비색 */
+        box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.15);
+        line-height: 1.5;
+        word-break: keep-all; /* 단어 중간에 줄이 안 끊기도록 설정 */
     }
 
-    /* 버튼 공통 스타일 (둥글고 귀엽게) */
-    div[data-testid="stButton"] > button {
-        border-radius: 25px !important;
-        font-size: 22px !important;
-        padding: 10px 24px !important;
+    /* 버튼 공통 스타일 (둥글고 빵빵하게) */
+    button[kind="primary"], button[kind="secondary"] {
+        border-radius: 30px !important;
+        font-size: 24px !important;
+        padding: 12px 24px !important;
         transition: all 0.2s ease !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     }
-    div[data-testid="stButton"] > button:hover {
+    
+    button[kind="primary"]:hover, button[kind="secondary"]:hover {
         transform: scale(1.05) !important;
     }
 
-    /* O 성공 버튼 (Primary) -> 파스텔 그린 */
-    div[data-testid="baseButton-primary"] {
+    /* ⭐ O 성공 버튼 (Primary) -> 산뜻한 파스텔 초록색 */
+    button[kind="primary"] {
         background-color: #bbf7d0 !important; 
-        border: 2px solid #86efac !important;
-        color: #14532d !important;
+        border: 3px solid #4ade80 !important;
+        color: #166534 !important; /* 진한 초록 글씨 */
+    }
+    button[kind="primary"]:hover {
+        background-color: #86efac !important;
     }
 
-    /* X 실패 버튼 및 일반 버튼 (Secondary) -> 파스텔 핑크 */
-    div[data-testid="baseButton-secondary"] {
+    /* ⭐ X 실패 버튼 (Secondary) -> 귀여운 파스텔 핑크색 */
+    button[kind="secondary"] {
         background-color: #fbcfe8 !important; 
-        border: 2px solid #f9a8d4 !important;
-        color: #831843 !important;
+        border: 3px solid #f472b6 !important;
+        color: #831843 !important; /* 진한 핑크/자주색 글씨 */
+    }
+    button[kind="secondary"]:hover {
+        background-color: #f9a8d4 !important;
     }
     
-    /* 탭 디자인 귀엽게 수정 */
+    /* 탭 디자인 */
     button[data-baseweb="tab"] {
-        font-size: 20px !important;
+        font-size: 22px !important;
         background-color: transparent !important;
     }
     </style>
@@ -98,11 +109,11 @@ if 'current_group' not in st.session_state:
     st.session_state.current_group = None
 
 # 메인 타이틀
-st.markdown("<h1 style='text-align: center; font-size: 55px; color: #db2777 !important;'>🧸 미션 보물 찾기 🧸</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; font-size: 60px; color: #db2777 !important;'>🧸 미션 보물 찾기 🧸</h1>", unsafe_allow_html=True)
 
 # 사이드바 (설정 및 현황판)
 with st.sidebar:
-    st.header("📂 쉿, 선생님 전용 공간")
+    st.header("📂 선생님 전용 공간")
     uploaded_file = st.file_uploader("미션 목록 엑셀(.xlsx) 업로드", type=['xlsx', 'csv'])
     
     if uploaded_file is not None:
@@ -138,7 +149,7 @@ with tab1:
     with col2:
         st.write("")
         st.write("")
-        if st.button("➕ 쏘옥 추가!", use_container_width=True):
+        if st.button("➕ 쏘옥 추가!", use_container_width=True, type="secondary"):
             if new_group and new_group not in st.session_state.groups:
                 st.session_state.groups[new_group] = 0
                 st.rerun()
@@ -149,8 +160,8 @@ with tab1:
         st.write("🎈 지금 모인 친구들:")
         for g in list(st.session_state.groups.keys()):
             col_a, col_b = st.columns([4, 1])
-            col_a.markdown(f"**{g}**")
-            if col_b.button("빼기", key=f"del_{g}"):
+            col_a.markdown(f"<span style='font-size: 20px; font-weight: bold;'>{g}</span>", unsafe_allow_html=True)
+            if col_b.button("빼기", key=f"del_{g}", type="secondary"):
                 del st.session_state.groups[g]
                 st.rerun()
 
@@ -164,14 +175,14 @@ with tab2:
         st.subheader("두근두근 미션 뽑기 🎲")
         selected_group = st.selectbox("어느 모둠이 상자를 열어볼까요?", list(st.session_state.groups.keys()))
         
-        if st.button("✨ 물음표 상자 열기! ✨", use_container_width=True):
+        if st.button("✨ 물음표 상자 열기! ✨", use_container_width=True, type="secondary"):
             st.session_state.current_group = selected_group
             st.session_state.current_mission = None
             
             # 흔들리는 물음표 상자 애니메이션
             placeholder = st.empty()
             placeholder.markdown("<div class='shake-box'>❔📦❔</div>", unsafe_allow_html=True)
-            time.sleep(2) # 2초 동안 긴장감
+            time.sleep(2.5) # 2.5초 동안 긴장감 조성
             placeholder.empty() 
             
             st.session_state.current_mission = random.choice(st.session_state.missions)
@@ -179,12 +190,13 @@ with tab2:
 
         # 미션 화면
         if st.session_state.current_mission:
-            st.markdown(f"<h3 style='text-align:center;'>도전: <span style='color:#ec4899;'>{st.session_state.current_group}</span></h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align:center;'>도전 모둠: <span style='color:#ec4899; font-size:40px;'>{st.session_state.current_group}</span></h3>", unsafe_allow_html=True)
+            # 미션 카드 출력
             st.markdown(f"<div class='mission-text'>{st.session_state.current_mission}</div>", unsafe_allow_html=True)
             
             col_o, col_x = st.columns(2)
             with col_o:
-                # 성공 버튼 (type="primary" 속성으로 그린색 적용)
+                # 성공 버튼 (type="primary" -> 초록색으로 자동 스타일링 됨)
                 if st.button("⭕ 완벽하게 성공!", use_container_width=True, type="primary"):
                     st.session_state.groups[st.session_state.current_group] += 1
                     st.session_state.current_mission = None
@@ -192,8 +204,8 @@ with tab2:
                     time.sleep(1)
                     st.rerun()
             with col_x:
-                # 실패 버튼 (일반 버튼으로 핑크색 적용)
-                if st.button("❌ 앗, 실패...", use_container_width=True):
+                # 실패 버튼 (type="secondary" -> 핑크색으로 자동 스타일링 됨)
+                if st.button("❌ 앗, 실패...", use_container_width=True, type="secondary"):
                     st.session_state.current_mission = None
                     st.error("아쉽지만 다음 기회에! 화이팅 🎈")
                     time.sleep(1)
@@ -205,7 +217,7 @@ with tab3:
     if not st.session_state.groups:
         st.info("아직 게임이 시작되지 않았어요.")
     else:
-        if st.button("👑 우승팀 보러가기 👑", use_container_width=True):
+        if st.button("👑 우승팀 보러가기 👑", use_container_width=True, type="secondary"):
             max_score = max(st.session_state.groups.values())
             winners = [g for g, score in st.session_state.groups.items() if score == max_score]
             
@@ -220,4 +232,4 @@ with tab3:
             st.write("참여한 모든 친구들 정말 멋져요!")
             sorted_groups = sorted(st.session_state.groups.items(), key=lambda x: x[1], reverse=True)
             for i, (g, score) in enumerate(sorted_groups, 1):
-                st.markdown(f"**{i}등:** {g} ({score}개)")
+                st.markdown(f"<span style='font-size: 24px;'>**{i}등:** {g} ({score}개)</span>", unsafe_allow_html=True)
