@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미션 보물 찾기</title>
+    <!-- Tailwind CSS (디자인) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel (브라우저에서 JSX 컴파일) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Canvas Confetti (우승팀 폭죽 효과) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        /* 아기자기하고 귀여운 폰트 적용 (배달의민족 주아체 느낌의 구글 폰트) */
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        
+        body { 
+            font-family: 'Jua', sans-serif; 
+            background-color: #fdf2f8; /* 파스텔 핑크 배경 */
+            color: #1e293b; /* 가독성을 위한 진한 네이비 텍스트 */
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* 제비뽑기 상자 흔들림 애니메이션 */
+        .shake-animation {
+            animation: shake 0.4s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            10% { transform: translate(-2px, -4px) rotate(-2deg); }
+            20% { transform: translate(-6px, 0px) rotate(2deg); }
+            30% { transform: translate(6px, 4px) rotate(0deg); }
+            40% { transform: translate(2px, -2px) rotate(2deg); }
+            50% { transform: translate(-2px, 4px) rotate(-2deg); }
+            60% { transform: translate(-6px, 2px) rotate(0deg); }
+            70% { transform: translate(6px, 2px) rotate(-2deg); }
+            80% { transform: translate(-2px, -2px) rotate(2deg); }
+            90% { transform: translate(2px, 4px) rotate(0deg); }
+            100% { transform: translate(2px, -4px) rotate(-2deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            // 앱 상태: SETUP, MAIN, DRAWING, MISSION, RESULT
+            const [screen, setScreen] = useState('SETUP');
+            const [groups, setGroups] = useState([]);
+            const [newGroupName, setNewGroupName] = useState('');
+            const [missionsText, setMissionsText] = useState('');
+            const [missionsList, setMissionsList] = useState([]);
+            const [currentGroup, setCurrentGroup] = useState(null);
+            const [currentMission, setCurrentMission] = useState('');
+            const [showScoreboard, setShowScoreboard] = useState(false);
+
+            // 1. 모둠 추가 기능
+            const handleAddGroup = () => {
+                if (newGroupName.trim() === '') return;
+                setGroups([...groups, { id: Date.now(), name: newGroupName.trim(), score: 0 }]);
+                setNewGroupName('');
+            };
+
+            // 1-1. 모둠 삭제 기능
+            const handleDeleteGroup = (id) => {
+                setGroups(groups.filter(g => g.id !== id));
+            };
+
+            // 2. 게임 시작 (미션 텍스트 변환)
+            const handleStartGame = () => {
+                if (groups.length === 0) {
+                    alert('모둠을 최소 1개 이상 추가해주세요!');
+                    return;
+                }
+                const parsedMissions = missionsText
+                    .split('\n')
+                    .map(m => m.trim())
+                    .filter(m => m !== '');
+                
+                if (parsedMissions.length === 0) {
+                    alert('미션을 입력해주세요! (엑셀에서 복사해 붙여넣기 하세요)');
+                    return;
+                }
+                
+                setMissionsList(parsedMissions);
+                setScreen('MAIN');
+            };
+
+            // 3. 제비뽑기 애니메이션 시작
+            const handleDraw = (group) => {
+                setCurrentGroup(group);
+                setScreen('DRAWING');
+                
+                // 2.5초 후 미션 화면으로 이동
+                setTimeout(() => {
+                    const randomIndex = Math.floor(Math.random() * missionsList.length);
+                    setCurrentMission(missionsList[randomIndex]);
+                    setScreen('MISSION');
+                }, 2500);
+            };
+
+            // 4. 미션 성공/실패 처리
+            const handleMissionResult = (isSuccess) => {
+                if (isSuccess) {
+                    setGroups(groups.map(g => 
+                        g.id === currentGroup.id ? { ...g, score: g.score + 1 } : g
+                    ));
+                }
+                setScreen('MAIN');
+            };
+
+            // 5. 게임 종료 및 우승팀 확인
+            const handleEndGame = () => {
+                setScreen('RESULT');
+                triggerConfetti();
+            };
+
+            // 폭죽 효과 함수
+            const triggerConfetti = () => {
+                const duration = 3000;
+                const end = Date.now() + duration;
+
+                const frame = () => {
+                    confetti({
+                        particleCount: 5,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: ['#ffb7b2', '#ffdac1', '#e2f0cb', '#b5ead7', '#c7ceea']
+                    });
+                    confetti({
+                        particleCount: 5,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: ['#ffb7b2', '#ffdac1', '#e2f0cb', '#b5ead7', '#c7ceea']
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                };
+                frame();
+            };
+
+            // 화면 1: 초기 설정 화면
+            if (screen === 'SETUP') {
+                return (
+                    <div className="max-w-4xl mx-auto p-6 pt-12 flex flex-col items-center">
+                        <h1 className="text-5xl font-bold mb-8 text-pink-500 drop-shadow-md">✨ 미션 보물 찾기 ✨</h1>
+                        
+                        <div className="w-full bg-white rounded-2xl shadow-xl p-8 mb-6 border-4 border-pink-200">
+                            <h2 className="text-2xl mb-4 font-bold text-slate-700">1. 참가 모둠 등록</h2>
+                            <div className="flex gap-2 mb-4">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 border-2 border-pink-300 rounded-xl text-lg focus:outline-none focus:border-pink-500"
+                                    placeholder="모둠 이름 입력 (예: 1모둠, 어벤져스)"
+                                    value={newGroupName}
+                                    onChange={(e) => setNewGroupName(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddGroup()}
+                                />
+                                <button 
+                                    onClick={handleAddGroup}
+                                    className="bg-pink-400 hover:bg-pink-500 text-white px-6 py-3 rounded-xl text-lg transition-colors shadow-md"
+                                >
+                                    + 추가
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                {groups.map(g => (
+                                    <div key={g.id} className="bg-pink-100 text-pink-800 px-4 py-2 rounded-full text-lg flex items-center shadow-sm">
+                                        {g.name}
+                                        <button onClick={() => handleDeleteGroup(g.id)} className="ml-2 text-red-400 hover:text-red-600 font-bold">X</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="w-full bg-white rounded-2xl shadow-xl p-8 border-4 border-blue-200 mb-8">
+                            <h2 className="text-2xl mb-4 font-bold text-slate-700">2. 미션 목록 입력</h2>
+                            <p className="text-slate-500 mb-2">엑셀 파일의 미션 열을 그대로 복사해서 아래에 붙여넣어 주세요. (엔터로 구분됩니다)</p>
+                            <textarea 
+                                className="w-full h-40 p-4 border-2 border-blue-300 rounded-xl text-lg focus:outline-none focus:border-blue-500"
+                                placeholder="예시:&#13;&#10;운동장 한 바퀴 뛰고 오기&#13;&#10;교장선생님과 하이파이브 하기&#13;&#10;단체 사진 찍기"
+                                value={missionsText}
+                                onChange={(e) => setMissionsText(e.target.value)}
+                            ></textarea>
+                        </div>
+
+                        <button 
+                            onClick={handleStartGame}
+                            className="bg-blue-500 hover:bg-blue-600 text-white text-3xl px-12 py-4 rounded-full shadow-lg transform hover:scale-105 transition-all"
+                        >
+                            게임 시작! 🚀
+                        </button>
+                    </div>
+                );
+            }
+
+            // 화면 2: 메인 대시보드
+            if (screen === 'MAIN') {
+                return (
+                    <div className="max-w-6xl mx-auto p-6 pt-8 relative">
+                        <div className="flex justify-between items-center mb-10">
+                            <h1 className="text-4xl font-bold text-blue-600 drop-shadow-sm">💎 보물찾기 본부 💎</h1>
+                            <div className="space-x-4">
+                                <button onClick={() => setShowScoreboard(!showScoreboard)} className="bg-yellow-400 hover:bg-yellow-500 text-slate-800 px-6 py-2 rounded-xl shadow-md text-xl">
+                                    {showScoreboard ? '현황판 닫기' : '🏆 실시간 현황판'}
+                                </button>
+                                <button onClick={handleEndGame} className="bg-slate-700 hover:bg-slate-800 text-white px-6 py-2 rounded-xl shadow-md text-xl">
+                                    게임 종료
+                                </button>
+                            </div>
+                        </div>
+
+                        {showScoreboard && (
+                            <div className="mb-10 bg-white p-6 rounded-2xl shadow-xl border-4 border-yellow-300 transition-all">
+                                <h2 className="text-2xl font-bold mb-4 text-center">🏆 실시간 모둠 순위 🏆</h2>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {[...groups].sort((a,b) => b.score - a.score).map((g, i) => (
+                                        <div key={g.id} className="bg-slate-50 p-4 rounded-xl text-center shadow">
+                                            <div className="text-lg text-slate-500">{i+1}위</div>
+                                            <div className="text-2xl font-bold text-slate-800">{g.name}</div>
+                                            <div className="text-3xl font-bold text-blue-500 mt-2">{g.score}점</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-white rounded-3xl shadow-xl p-10 border-4 border-indigo-100 text-center">
+                            <h2 className="text-3xl mb-8 font-bold text-slate-700">미션을 뽑을 모둠을 선택하세요!</h2>
+                            <div className="flex flex-wrap justify-center gap-6">
+                                {groups.map(g => (
+                                    <button 
+                                        key={g.id}
+                                        onClick={() => handleDraw(g)}
+                                        className="bg-indigo-400 hover:bg-indigo-500 text-white px-8 py-6 rounded-2xl text-2xl font-bold shadow-lg transform hover:-translate-y-2 transition-all flex flex-col items-center gap-2"
+                                    >
+                                        <span>{g.name}</span>
+                                        <span className="text-indigo-200 text-lg bg-indigo-600 px-3 py-1 rounded-full">현재 {g.score}점</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // 화면 3: 제비뽑기 애니메이션
+            if (screen === 'DRAWING') {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 bg-opacity-90 fixed inset-0 z-50">
+                        <h2 className="text-5xl text-white font-bold mb-12 drop-shadow-lg">
+                            [{currentGroup.name}] 미션 뽑는 중...
+                        </h2>
+                        <div className="text-9xl shake-animation mb-8">
+                            🎁
+                        </div>
+                        <p className="text-yellow-300 text-2xl animate-pulse">두구두구두구...</p>
+                    </div>
+                );
+            }
+
+            // 화면 4: 미션 확인 및 O/X 판정
+            if (screen === 'MISSION') {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-pink-50">
+                        <div className="text-2xl text-slate-500 font-bold mb-4 bg-white px-6 py-2 rounded-full shadow-sm">
+                            현재 도전 모둠: <span className="text-blue-600">{currentGroup.name}</span>
+                        </div>
+                        
+                        <div className="bg-white w-full max-w-4xl p-12 rounded-3xl shadow-2xl border-8 border-indigo-200 text-center mb-12 transform scale-105">
+                            <h1 className="text-5xl md:text-6xl font-black text-slate-800 leading-tight break-keep">
+                                {currentMission}
+                            </h1>
+                        </div>
+
+                        <div className="flex gap-8 w-full max-w-3xl justify-center">
+                            <button 
+                                onClick={() => handleMissionResult(true)}
+                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-4xl font-bold py-8 rounded-3xl shadow-xl transform hover:scale-105 transition-all flex flex-col items-center"
+                            >
+                                <span className="text-6xl mb-2">⭕</span>
+                                미션 성공!
+                            </button>
+                            <button 
+                                onClick={() => handleMissionResult(false)}
+                                className="flex-1 bg-red-500 hover:bg-red-600 text-white text-4xl font-bold py-8 rounded-3xl shadow-xl transform hover:scale-105 transition-all flex flex-col items-center"
+                            >
+                                <span className="text-6xl mb-2">❌</span>
+                                실패
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // 화면 5: 최종 우승팀 결과
+            if (screen === 'RESULT') {
+                const maxScore = Math.max(...groups.map(g => g.score));
+                const winners = groups.filter(g => g.score === maxScore);
+
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-800 text-white p-6 relative overflow-hidden">
+                        <h1 className="text-4xl md:text-5xl text-yellow-300 font-bold mb-12">🎉 보물찾기 최종 결과 🎉</h1>
+                        
+                        <div className="bg-white text-slate-800 p-12 rounded-3xl shadow-2xl text-center max-w-2xl w-full z-10 border-8 border-yellow-400">
+                            <h2 className="text-3xl mb-6 text-slate-500">영광의 우승팀</h2>
+                            <div className="text-6xl md:text-7xl font-black text-blue-600 mb-8 drop-shadow-md">
+                                {winners.map(w => w.name).join(', ')}
+                            </div>
+                            <div className="text-4xl font-bold text-pink-500 bg-pink-100 inline-block px-8 py-3 rounded-full mb-10">
+                                최종 {maxScore}점 달성!
+                            </div>
+
+                            <div className="w-full bg-slate-100 rounded-2xl p-6 text-left">
+                                <h3 className="text-xl font-bold mb-4 text-center border-b-2 pb-2">전체 순위표</h3>
+                                {[...groups].sort((a,b) => b.score - a.score).map((g, index) => (
+                                    <div key={g.id} className="flex justify-between items-center py-2 text-xl font-bold border-b border-slate-200 last:border-0">
+                                        <div className="flex gap-4">
+                                            <span className={index === 0 ? "text-yellow-500" : "text-slate-400"}>{index + 1}위</span>
+                                            <span>{g.name}</span>
+                                        </div>
+                                        <span className="text-blue-500">{g.score}점</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="mt-12 text-slate-400 hover:text-white underline text-xl z-10"
+                        >
+                            처음부터 다시 시작하기
+                        </button>
+                    </div>
+                );
+            }
+
+            return null;
+        }
+
+        // React 앱 렌더링
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
